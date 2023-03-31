@@ -9,6 +9,8 @@ use colored::{ColoredString, Colorize};
 use itertools::zip_eq;
 use smol_str::SmolStr;
 
+use crate::template_engine::TemplateEngine;
+
 pub fn print_tree(
     db: &dyn SyntaxGroup,
     syntax_root: &SyntaxNode,
@@ -32,7 +34,8 @@ pub fn print_partial_tree(
     printer.result
 }
 
-struct Printer<'a> {
+pub struct Printer<'a> {
+    template_engine: TemplateEngine,
     db: &'a dyn SyntaxGroup,
     spec: Vec<Node>,
     print_colors: bool,
@@ -48,6 +51,7 @@ impl<'a> Printer<'a> {
     fn new(db: &'a dyn SyntaxGroup, print_colors: bool, print_trivia: bool) -> Self {
         Self {
             db,
+            template_engine: TemplateEngine::new(),
             spec: get_spec(),
             print_colors,
             print_trivia,
@@ -66,6 +70,7 @@ impl<'a> Printer<'a> {
     ) -> Self {
         Self {
             db,
+            template_engine: TemplateEngine::new(),
             spec: get_spec(),
             print_colors: false,
             print_trivia,
@@ -89,6 +94,11 @@ impl<'a> Printer<'a> {
         match green_node.details {
             syntax::node::green::GreenNodeDetails::Token(text) => {
                 if under_top_level {
+                    self.template_engine.parse_token(
+                        field_description,
+                        text.as_str(),
+                        &green_node.kind,
+                    );
                     self.print_token_node(
                         field_description,
                         indent,
@@ -99,6 +109,7 @@ impl<'a> Printer<'a> {
                 }
             }
             syntax::node::green::GreenNodeDetails::Node { .. } => {
+                self.template_engine.node_start(field_description, &green_node.kind);
                 self.print_internal_node(
                     field_description,
                     indent,
@@ -108,6 +119,7 @@ impl<'a> Printer<'a> {
                     green_node.kind,
                     under_top_level,
                 );
+                self.template_engine.node_end(field_description, &green_node.kind);
             }
         }
     }
@@ -117,7 +129,7 @@ impl<'a> Printer<'a> {
         field_description: &str,
         indent: &str,
         extra_head_indent: &str,
-        text: SmolStr,
+        tkn_text: SmolStr,
         kind: SyntaxKind,
     ) {
         let text = if kind == SyntaxKind::TokenMissing {
@@ -127,11 +139,12 @@ impl<'a> Printer<'a> {
                 SyntaxKind::TokenWhitespace
                 | SyntaxKind::TokenNewline
                 | SyntaxKind::TokenEndOfFile => ".".to_string(),
-                _ => format!(": '{}'", self.green(self.bold(text.as_str().into()))),
+                _ => format!(": '{}'", self.green(self.bold(tkn_text.as_str().into()))),
             };
             format!("{} (kind: {:?}){token_text}", self.blue(field_description.into()), kind)
         };
-        self.result.push_str(format!("{indent}{extra_head_indent}{text}\n").as_str());
+
+        self.result.push_str(format!("{indent}{extra_head_indent}TKN: {text}\n").as_str());
     }
 
     /// `under_top_level`: whether we are in a subtree of the top-level kind.
@@ -182,7 +195,7 @@ impl<'a> Printer<'a> {
             } else {
                 self.result.push_str(
                     format!(
-                        "{indent}{extra_head_indent}{}{extra_info}{suffix}\n",
+                        "{indent}{extra_head_indent}INT: {}{extra_info}{suffix}\n",
                         self.cyan(field_description.into())
                     )
                     .as_str(),
