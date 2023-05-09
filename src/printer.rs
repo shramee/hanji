@@ -11,7 +11,7 @@ use smol_str::SmolStr;
 
 use crate::template_engine::TemplateEngine;
 
-pub fn print_tree(
+pub fn print_docs(
     db: &dyn SyntaxGroup,
     syntax_root: &SyntaxNode,
     print_colors: bool,
@@ -19,18 +19,6 @@ pub fn print_tree(
 ) -> String {
     let mut printer = Printer::new(db, print_colors, print_trivia);
     printer.print_tree("root", syntax_root, "", true, true);
-    printer.result
-}
-
-pub fn print_partial_tree(
-    db: &dyn SyntaxGroup,
-    syntax_root: &SyntaxNode,
-    top_level_kind: &str,
-    ignored_kinds: Vec<&str>,
-    print_trivia: bool,
-) -> String {
-    let mut printer = Printer::new_partial(db, top_level_kind, ignored_kinds, print_trivia);
-    printer.print_tree("root", syntax_root, "", true, false);
     printer.result
 }
 
@@ -57,25 +45,6 @@ impl<'a> Printer<'a> {
             print_trivia,
             top_level_kind: None,
             ignored_kinds: Vec::new(),
-            result: String::new(),
-        }
-    }
-
-    /// Create a new printer that is capable of partial printing of the syntax tree.
-    fn new_partial(
-        db: &'a dyn SyntaxGroup,
-        top_level_kind: &str,
-        ignored_kinds: Vec<&str>,
-        print_trivia: bool,
-    ) -> Self {
-        Self {
-            db,
-            template_engine: TemplateEngine::new(),
-            spec: get_spec(),
-            print_colors: false,
-            print_trivia,
-            top_level_kind: Some(top_level_kind.to_string()),
-            ignored_kinds: ignored_kinds.into_iter().map(|x| x.to_string()).collect(),
             result: String::new(),
         }
     }
