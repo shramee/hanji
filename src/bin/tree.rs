@@ -1,9 +1,7 @@
-pub mod printer;
-pub mod template_engine;
 use std::env;
 
+use cairo_lang_parser::printer::print_tree;
 use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatabase};
-use printer::print_docs;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -11,9 +9,6 @@ fn main() {
         panic!("File path to parse is required.")
     }
     generate_syntax_tree(&args[1]);
-
-    // Cairo language spec
-    // cairo_lang_syntax_codegen::cairo_spec::get_spec
 }
 
 fn generate_syntax_tree(cairo_filename: &str) {
@@ -22,5 +17,7 @@ fn generate_syntax_tree(cairo_filename: &str) {
 
     let (syntax_root, _diagnostics) = get_syntax_root_and_diagnostics_from_file(db, cairo_filename);
 
-    let _printed_tree = print_docs(db, &syntax_root, false, true);
+    let _printed_tree = print_tree(db, &syntax_root, false, true);
+
+    println!("{_printed_tree}");
 }
