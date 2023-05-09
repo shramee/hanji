@@ -5,29 +5,25 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax_codegen::cairo_spec::get_spec;
 use cairo_lang_syntax_codegen::spec::{Member, Node, NodeKind};
-use colored::{ColoredString, Colorize};
 use itertools::zip_eq;
 use smol_str::SmolStr;
 
 use crate::template_engine::TemplateEngine;
 
-pub fn print_docs(
+pub fn run_printer(
     db: &dyn SyntaxGroup,
     syntax_root: &SyntaxNode,
-    print_colors: bool,
-    print_trivia: bool,
+    template_engine: impl TemplateEngine,
 ) -> String {
-    let mut printer = Printer::new(db, print_colors, print_trivia);
+    let mut printer = Printer::new(db, template_engine);
     printer.print_tree("root", syntax_root, "", true, true);
     printer.result
 }
 
-pub struct Printer<'a> {
-    template_engine: TemplateEngine,
+pub struct Printer<'a, T: TemplateEngine> {
+    template_engine: T,
     db: &'a dyn SyntaxGroup,
     spec: Vec<Node>,
-    print_colors: bool,
-    print_trivia: bool,
     /// The highest SyntaxKind that is interesting. All other kinds, if not under it, are ignored.
     top_level_kind: Option<String>,
     /// Syntax kinds to ignore when printing. In this context, "ignore" means printing the nodes
@@ -35,14 +31,12 @@ pub struct Printer<'a> {
     ignored_kinds: Vec<String>,
     result: String,
 }
-impl<'a> Printer<'a> {
-    fn new(db: &'a dyn SyntaxGroup, print_colors: bool, print_trivia: bool) -> Self {
+impl<'a, T: TemplateEngine> Printer<'a, T> {
+    fn new(db: &'a dyn SyntaxGroup, template_engine: T) -> Self {
         Self {
             db,
-            template_engine: TemplateEngine::new(),
+            template_engine,
             spec: get_spec(),
-            print_colors,
-            print_trivia,
             top_level_kind: None,
             ignored_kinds: Vec::new(),
             result: String::new(),
@@ -102,15 +96,15 @@ impl<'a> Printer<'a> {
         kind: SyntaxKind,
     ) {
         let text = if kind == SyntaxKind::TokenMissing {
-            format!("{}: {}", self.blue(field_description.into()), self.red("Missing".into()))
+            format!("{}: {}", field_description, "Missing")
         } else {
             let token_text = match kind {
                 SyntaxKind::TokenWhitespace
                 | SyntaxKind::TokenNewline
                 | SyntaxKind::TokenEndOfFile => ".".to_string(),
-                _ => format!(": '{}'", self.green(self.bold(tkn_text.as_str().into()))),
+                _ => tkn_text.as_str().into(),
             };
-            format!("{} (kind: {:?}){token_text}", self.blue(field_description.into()), kind)
+            format!("{} (kind: {:?}){token_text}", field_description, kind)
         };
 
         self.result.push_str(format!("{indent}{extra_head_indent}TKN: {text}\n").as_str());
@@ -134,15 +128,13 @@ impl<'a> Printer<'a> {
         let (under_top_level, indent) =
             if current_is_top_level { (true, "") } else { (under_top_level, indent) };
 
-        if !self.print_trivia {
-            if let Some(token_node) = syntax_node.get_terminal_token(self.db) {
-                self.print_tree(field_description, &token_node, indent, is_last, under_top_level);
-                return;
-            }
+        if let Some(token_node) = syntax_node.get_terminal_token(self.db) {
+            self.print_tree(field_description, &token_node, indent, is_last, under_top_level);
+            return;
         }
 
         let extra_info = if is_missing_kind(kind) {
-            format!(": {}", self.red("Missing".into()))
+            format!(": {}", "Missing")
         } else {
             format!(" (kind: {kind:?})")
         };
@@ -152,7 +144,7 @@ impl<'a> Printer<'a> {
         let suffix = if self.ignored_kinds.contains(&format!("{kind:?}")) {
             " <ignored>".to_string()
         } else if num_children == 0 {
-            self.bright_purple(" []".into()).to_string()
+            " []".into()
         } else {
             String::new()
         };
@@ -165,7 +157,7 @@ impl<'a> Printer<'a> {
                 self.result.push_str(
                     format!(
                         "{indent}{extra_head_indent}INT: {}{extra_info}{suffix}\n",
-                        self.cyan(field_description.into())
+                        field_description
                     )
                     .as_str(),
                 );
@@ -244,26 +236,6 @@ impl<'a> Printer<'a> {
         } else {
             panic!("Could not find spec for {name}")
         }
-    }
-
-    // Color helpers.
-    fn bold(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.bold() } else { text }
-    }
-    fn green(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.green() } else { text }
-    }
-    fn red(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.red() } else { text }
-    }
-    fn cyan(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.cyan() } else { text }
-    }
-    fn blue(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.blue() } else { text }
-    }
-    fn bright_purple(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.bright_purple() } else { text }
     }
 }
 

@@ -1,17 +1,48 @@
 use std::collections::HashMap;
-use std::u8;
 
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::kind::SyntaxKind::*;
 
-pub struct TemplateEngine {
+use super::TemplateEngine;
+
+pub struct MarkdownEngine {
     pub templates: HashMap<String, String>,
     nodes: Vec<(SyntaxKind, String, usize)>,
     tokens: Vec<(SyntaxKind, String, String)>,
     pub ignored_kinds: HashMap<SyntaxKind, u8>,
 }
 
-impl TemplateEngine {
+impl TemplateEngine for MarkdownEngine {
+    fn parse_token(&mut self, field_description: &str, text: &str, kind: &SyntaxKind) {
+        if self.ignored_kinds.contains_key(&kind) {
+            return;
+        }
+        let text = match kind {
+            SyntaxKind::TokenNewline => ".",
+            _ => text,
+        };
+        self.tokens.push((*kind, field_description.into(), text.into()));
+    }
+    fn node_start(&mut self, field_description: &str, kind: &SyntaxKind) {
+        if self.ignored_kinds.contains_key(&kind) {
+            return;
+        }
+        let _node_data = (kind.to_string(), field_description.to_string());
+        self.nodes.push((*kind, field_description.to_string(), self.tokens.len()));
+    }
+    fn node_end(&mut self, _field_description: &str, kind: &SyntaxKind) {
+        if self.ignored_kinds.contains_key(&kind) {
+            return;
+        }
+        let node = self.nodes.pop().unwrap();
+        match kind {
+            FunctionWithBody => self.process_function_doc(node),
+            _ => {}
+        }
+    }
+}
+
+impl MarkdownEngine {
     pub fn new() -> Self {
         let mut ignored_nodes: HashMap<SyntaxKind, u8> = HashMap::new();
         // ignored_nodes.contains_key("");
@@ -27,33 +58,6 @@ impl TemplateEngine {
             nodes: Vec::new(),
             tokens: Vec::new(),
             ignored_kinds: ignored_nodes,
-        }
-    }
-    pub fn parse_token(&mut self, field_description: &str, text: &str, kind: &SyntaxKind) {
-        if self.ignored_kinds.contains_key(&kind) {
-            return;
-        }
-        let text = match kind {
-            SyntaxKind::TokenNewline => ".",
-            _ => text,
-        };
-        self.tokens.push((*kind, field_description.into(), text.into()));
-    }
-    pub fn node_start(&mut self, field_description: &str, kind: &SyntaxKind) {
-        if self.ignored_kinds.contains_key(&kind) {
-            return;
-        }
-        let _node_data = (kind.to_string(), field_description.to_string());
-        self.nodes.push((*kind, field_description.to_string(), self.tokens.len()));
-    }
-    pub fn node_end(&mut self, _field_description: &str, kind: &SyntaxKind) {
-        if self.ignored_kinds.contains_key(&kind) {
-            return;
-        }
-        let node = self.nodes.pop().unwrap();
-        match kind {
-            FunctionWithBody => self.process_function_doc(node),
-            _ => {}
         }
     }
 
