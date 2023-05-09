@@ -6,7 +6,6 @@ use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax_codegen::cairo_spec::get_spec;
 use cairo_lang_syntax_codegen::spec::{Member, Node, NodeKind};
 use itertools::zip_eq;
-use smol_str::SmolStr;
 
 use crate::template_engine::TemplateEngine;
 
@@ -29,7 +28,6 @@ pub struct Printer<'a, T: TemplateEngine> {
     /// Syntax kinds to ignore when printing. In this context, "ignore" means printing the nodes
     /// themselves, but not their children.
     ignored_kinds: Vec<String>,
-    result: String,
 }
 impl<'a, T: TemplateEngine> Printer<'a, T> {
     fn new(db: &'a dyn SyntaxGroup, template_engine: T) -> Self {
@@ -39,7 +37,6 @@ impl<'a, T: TemplateEngine> Printer<'a, T> {
             spec: get_spec(),
             top_level_kind: None,
             ignored_kinds: Vec::new(),
-            result: String::new(),
         }
     }
 
@@ -52,7 +49,6 @@ impl<'a, T: TemplateEngine> Printer<'a, T> {
         is_last: bool,
         under_top_level: bool,
     ) {
-        let extra_head_indent = if is_last { "└── " } else { "├── " };
         let green_node = syntax_node.green_node(self.db);
         match green_node.details {
             syntax::node::green::GreenNodeDetails::Token(text) => {
@@ -62,21 +58,13 @@ impl<'a, T: TemplateEngine> Printer<'a, T> {
                         text.as_str(),
                         &green_node.kind,
                     );
-                    self.print_token_node(
-                        field_description,
-                        indent,
-                        extra_head_indent,
-                        text,
-                        green_node.kind,
-                    )
                 }
             }
             syntax::node::green::GreenNodeDetails::Node { .. } => {
                 self.template_engine.node_start(field_description, &green_node.kind);
-                self.print_internal_node(
+                self.process_internal_node(
                     field_description,
                     indent,
-                    extra_head_indent,
                     is_last,
                     syntax_node,
                     green_node.kind,
@@ -87,36 +75,12 @@ impl<'a, T: TemplateEngine> Printer<'a, T> {
         };
     }
 
-    fn print_token_node(
-        &mut self,
-        field_description: &str,
-        indent: &str,
-        extra_head_indent: &str,
-        tkn_text: SmolStr,
-        kind: SyntaxKind,
-    ) {
-        let text = if kind == SyntaxKind::TokenMissing {
-            format!("{}: {}", field_description, "Missing")
-        } else {
-            let token_text = match kind {
-                SyntaxKind::TokenWhitespace
-                | SyntaxKind::TokenNewline
-                | SyntaxKind::TokenEndOfFile => ".".to_string(),
-                _ => tkn_text.as_str().into(),
-            };
-            format!("{} (kind: {:?}){token_text}", field_description, kind)
-        };
-
-        self.result.push_str(format!("{indent}{extra_head_indent}TKN: {text}\n").as_str());
-    }
-
     /// `under_top_level`: whether we are in a subtree of the top-level kind.
     #[allow(clippy::too_many_arguments)]
-    fn print_internal_node(
+    fn process_internal_node(
         &mut self,
         field_description: &str,
         indent: &str,
-        extra_head_indent: &str,
         is_last: bool,
         syntax_node: &SyntaxNode,
         kind: SyntaxKind,
@@ -133,36 +97,8 @@ impl<'a, T: TemplateEngine> Printer<'a, T> {
             return;
         }
 
-        let extra_info = if is_missing_kind(kind) {
-            format!(": {}", "Missing")
-        } else {
-            format!(" (kind: {kind:?})")
-        };
-
         let children: Vec<_> = syntax_node.children(self.db).collect();
         let num_children = children.len();
-        let suffix = if self.ignored_kinds.contains(&format!("{kind:?}")) {
-            " <ignored>".to_string()
-        } else if num_children == 0 {
-            " []".into()
-        } else {
-            String::new()
-        };
-
-        // Append to string only if we are under the top level kind.
-        if under_top_level {
-            if current_is_top_level {
-                self.result.push_str(format!("└── Top level kind: {kind:?}{suffix}\n").as_str());
-            } else {
-                self.result.push_str(
-                    format!(
-                        "{indent}{extra_head_indent}INT: {}{extra_info}{suffix}\n",
-                        field_description
-                    )
-                    .as_str(),
-                );
-            }
-        }
 
         if under_top_level && self.ignored_kinds.contains(&format!("{kind:?}")) {
             return;
@@ -237,9 +173,4 @@ impl<'a, T: TemplateEngine> Printer<'a, T> {
             panic!("Could not find spec for {name}")
         }
     }
-}
-
-// TODO(yuval): autogenerate.
-fn is_missing_kind(kind: SyntaxKind) -> bool {
-    matches!(kind, SyntaxKind::ExprMissing | SyntaxKind::StatementMissing)
 }
