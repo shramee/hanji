@@ -3,7 +3,8 @@ pub mod template_engine;
 use std::env;
 
 use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatabase};
-use printer::print_docs;
+use printer::run_printer;
+use template_engine::MarkdownEngine;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -22,5 +23,6 @@ fn generate_syntax_tree(cairo_filename: &str) {
 
     let (syntax_root, _diagnostics) = get_syntax_root_and_diagnostics_from_file(db, cairo_filename);
 
-    let _printed_tree = print_docs(db, &syntax_root, false, true);
+    let printed_tree = run_printer(db, &syntax_root, MarkdownEngine::new());
+    println!("{printed_tree}");
 }
