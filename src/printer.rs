@@ -17,7 +17,7 @@ pub fn run_printer(
 ) -> String {
     let mut printer = Printer::new(db, template_engine);
     printer.print_tree("root", syntax_root, "", true, true);
-    printer.result
+    printer.template_engine.get_result()
 }
 
 pub struct Printer<'a, T: TemplateEngine> {
@@ -84,7 +84,7 @@ impl<'a, T: TemplateEngine> Printer<'a, T> {
                 );
                 self.template_engine.node_end(field_description, &green_node.kind);
             }
-        }
+        };
     }
 
     fn print_token_node(

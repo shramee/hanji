@@ -10,6 +10,7 @@ pub struct MarkdownEngine {
     nodes: Vec<(SyntaxKind, String, usize)>,
     tokens: Vec<(SyntaxKind, String, String)>,
     pub ignored_kinds: HashMap<SyntaxKind, u8>,
+    payload: String,
 }
 
 impl TemplateEngine for MarkdownEngine {
@@ -40,6 +41,10 @@ impl TemplateEngine for MarkdownEngine {
             _ => {}
         }
     }
+
+    fn get_result(&self) -> String {
+        self.payload.to_string()
+    }
 }
 
 impl MarkdownEngine {
@@ -58,6 +63,7 @@ impl MarkdownEngine {
             nodes: Vec::new(),
             tokens: Vec::new(),
             ignored_kinds: ignored_nodes,
+            payload: "".into(),
         }
     }
 
@@ -139,19 +145,21 @@ impl MarkdownEngine {
             i += 1;
         }
 
-        println!("\n\n");
-        println!("### Function `{function_name}`");
-        println!("{function_comments}");
-        println!("");
-        println!("#### Parameters:");
-        println!("```");
-        println!("{function_args}");
-        println!("```");
-        println!("");
-        println!("#### Returns:");
-        println!("```");
-        println!("{function_return}");
-        println!("```");
+        self.payload = "".to_string()
+            + &self.payload
+            + &format!("\n\n\n")
+            + &format!("### Function `{function_name}`\n")
+            + &format!("{function_comments}\n")
+            + &format!("\n")
+            + &format!("#### Parameters:\n")
+            + &format!("```\n")
+            + &format!("{function_args}\n")
+            + &format!("```\n")
+            + &format!("\n")
+            + &format!("#### Returns:\n")
+            + &format!("```\n")
+            + &format!("{function_return}\n")
+            + &format!("```\n");
     }
 
     pub fn render_syntax_doc(

@@ -23,5 +23,6 @@ fn generate_syntax_tree(cairo_filename: &str) {
 
     let (syntax_root, _diagnostics) = get_syntax_root_and_diagnostics_from_file(db, cairo_filename);
 
-    let _printed_tree = run_printer(db, &syntax_root, MarkdownEngine::new());
+    let printed_tree = run_printer(db, &syntax_root, MarkdownEngine::new());
+    println!("{printed_tree}");
 }
