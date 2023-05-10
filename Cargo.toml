@@ -6,10 +6,10 @@ default-run = 'main'
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cairo-lang-parser = { git = "https://github.com/starkware-libs/cairo",rev = "v1.0.0-alpha.7"}
-cairo-lang-filesystem = { git = "https://github.com/starkware-libs/cairo",rev = "v1.0.0-alpha.7"}
-cairo-lang-syntax = { git = "https://github.com/starkware-libs/cairo",rev = "v1.0.0-alpha.7"}
-cairo-lang-syntax-codegen = { git = "https://github.com/starkware-libs/cairo",rev = "v1.0.0-alpha.7"}
+cairo-lang-parser = { git = "https://github.com/starkware-libs/cairo",rev = "v1.0.0-rc0"}
+cairo-lang-filesystem = { git = "https://github.com/starkware-libs/cairo",rev = "v1.0.0-rc0"}
+cairo-lang-syntax = { git = "https://github.com/starkware-libs/cairo",rev = "v1.0.0-rc0"}
+cairo-lang-syntax-codegen = { git = "https://github.com/starkware-libs/cairo",rev = "v1.0.0-rc0"}
 colored = "2"
 itertools = "0.10.3"
 smol_str = { version = "0.2.0", features = ["serde"] }
