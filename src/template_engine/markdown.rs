@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::kind::SyntaxKind::*;
+use cairo_lang_syntax::node::SyntaxNode;
 
 use super::TemplateEngine;
 
@@ -14,7 +15,7 @@ pub struct MarkdownEngine {
 }
 
 impl TemplateEngine for MarkdownEngine {
-    fn token(&mut self, description: &str, text: &str, kind: &SyntaxKind, syntax_node: SyntaxNode) {
+    fn token(&mut self, description: &str, kind: &SyntaxKind, text: &str, _node: &SyntaxNode) {
         if self.ignored_nodes.contains_key(&kind) {
             return;
         }
@@ -25,7 +26,7 @@ impl TemplateEngine for MarkdownEngine {
         self.tokens.push((*kind, description.into(), text.into()));
     }
 
-    fn node_start(&mut self, description: &str, kind: &SyntaxKind, syntax_node: SyntaxNode) {
+    fn node_start(&mut self, description: &str, kind: &SyntaxKind, _node: &SyntaxNode) {
         if self.ignored_nodes.contains_key(&kind) {
             return;
         }
@@ -33,7 +34,7 @@ impl TemplateEngine for MarkdownEngine {
         self.nodes.push((*kind, description.to_string(), self.tokens.len()));
     }
 
-    fn node_end(&mut self, _description: &str, kind: &SyntaxKind, syntax_node: SyntaxNode) {
+    fn node_end(&mut self, _description: &str, kind: &SyntaxKind, _node: &SyntaxNode) {
         if self.ignored_nodes.contains_key(&kind) {
             return;
         }
@@ -151,7 +152,7 @@ impl MarkdownEngine {
 
         self.payload = "".to_string()
             + &self.payload
-            + &format!("## Function `{function_name}`")
+            + &format!("## Function `{function_name}`\n")
             + &format!("{function_comments}\n")
             + &format!("\n")
             + &format!("#### Parameters:\n")
