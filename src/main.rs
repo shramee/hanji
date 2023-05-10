@@ -1,10 +1,7 @@
-pub mod printer;
-pub mod template_engine;
 use std::env;
 
 use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatabase};
-use printer::run_printer;
-use template_engine::MarkdownEngine;
+use hanji::{run_printer, MarkdownEngine};
 fn main() {
     let args: Vec<String> = env::args().collect();
 
