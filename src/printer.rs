@@ -50,18 +50,20 @@ impl<'a, T: TemplateEngine> Printer<'a, T> {
         under_top_level: bool,
     ) {
         let green_node = syntax_node.green_node(self.db);
+        syntax_node.get_text(self.db);
         match green_node.details {
             syntax::node::green::GreenNodeDetails::Token(text) => {
                 if under_top_level {
-                    self.template_engine.parse_token(
+                    self.template_engine.token(
                         field_description,
+                        syntax_node,
                         text.as_str(),
                         &green_node.kind,
                     );
                 }
             }
             syntax::node::green::GreenNodeDetails::Node { .. } => {
-                self.template_engine.node_start(field_description, &green_node.kind);
+                self.template_engine.node_start(field_description, &green_node.kind, syntax_node);
                 self.process_internal_node(
                     field_description,
                     indent,
@@ -70,7 +72,7 @@ impl<'a, T: TemplateEngine> Printer<'a, T> {
                     green_node.kind,
                     under_top_level,
                 );
-                self.template_engine.node_end(field_description, &green_node.kind);
+                self.template_engine.node_end(field_description, &green_node.kind, syntax_node);
             }
         };
     }

@@ -9,30 +9,32 @@ pub struct MarkdownEngine {
     pub templates: HashMap<String, String>,
     nodes: Vec<(SyntaxKind, String, usize)>,
     tokens: Vec<(SyntaxKind, String, String)>,
-    pub ignored_kinds: HashMap<SyntaxKind, u8>,
+    pub ignored_nodes: HashMap<SyntaxKind, u8>,
     payload: String,
 }
 
 impl TemplateEngine for MarkdownEngine {
-    fn parse_token(&mut self, field_description: &str, text: &str, kind: &SyntaxKind) {
-        if self.ignored_kinds.contains_key(&kind) {
+    fn token(&mut self, description: &str, text: &str, kind: &SyntaxKind, syntax_node: SyntaxNode) {
+        if self.ignored_nodes.contains_key(&kind) {
             return;
         }
         let text = match kind {
             SyntaxKind::TokenNewline => ".",
             _ => text,
         };
-        self.tokens.push((*kind, field_description.into(), text.into()));
+        self.tokens.push((*kind, description.into(), text.into()));
     }
-    fn node_start(&mut self, field_description: &str, kind: &SyntaxKind) {
-        if self.ignored_kinds.contains_key(&kind) {
+
+    fn node_start(&mut self, description: &str, kind: &SyntaxKind, syntax_node: SyntaxNode) {
+        if self.ignored_nodes.contains_key(&kind) {
             return;
         }
-        let _node_data = (kind.to_string(), field_description.to_string());
-        self.nodes.push((*kind, field_description.to_string(), self.tokens.len()));
+        let _node_data = (kind.to_string(), description.to_string());
+        self.nodes.push((*kind, description.to_string(), self.tokens.len()));
     }
-    fn node_end(&mut self, _field_description: &str, kind: &SyntaxKind) {
-        if self.ignored_kinds.contains_key(&kind) {
+
+    fn node_end(&mut self, _description: &str, kind: &SyntaxKind, syntax_node: SyntaxNode) {
+        if self.ignored_nodes.contains_key(&kind) {
             return;
         }
         let node = self.nodes.pop().unwrap();
@@ -51,10 +53,10 @@ impl MarkdownEngine {
     pub fn new() -> Self {
         let mut ignored_nodes: HashMap<SyntaxKind, u8> = HashMap::new();
         // ignored_nodes.contains_key("");
-        ignored_nodes.insert(ItemList, 0);
+        // ignored_nodes.insert(ItemList, 0);
         ignored_nodes.insert(TokenNewline, 0);
         ignored_nodes.insert(SyntaxFile, 0);
-        ignored_nodes.insert(Trivia, 0);
+        // ignored_nodes.insert(Trivia, 0);
         ignored_nodes.insert(TokenWhitespace, 0);
         ignored_nodes.insert(TokenNewline, 0);
         ignored_nodes.insert(TokenNewline, 0);
@@ -62,13 +64,15 @@ impl MarkdownEngine {
             templates: HashMap::new(),
             nodes: Vec::new(),
             tokens: Vec::new(),
-            ignored_kinds: ignored_nodes,
+            ignored_nodes,
             payload: "".into(),
         }
     }
 
     pub fn process_function_doc(&mut self, node: (SyntaxKind, String, usize)) {
+        // Gets all children nodes
         let tokens = &self.tokens[node.2..];
+
         let max_index = tokens.len();
         let mut i: usize = 0;
 
@@ -147,8 +151,7 @@ impl MarkdownEngine {
 
         self.payload = "".to_string()
             + &self.payload
-            + &format!("\n\n\n")
-            + &format!("### Function `{function_name}`\n")
+            + &format!("## Function `{function_name}`")
             + &format!("{function_comments}\n")
             + &format!("\n")
             + &format!("#### Parameters:\n")
