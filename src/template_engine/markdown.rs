@@ -150,20 +150,24 @@ impl MarkdownEngine {
             i += 1;
         }
 
-        self.payload = "".to_string()
-            + &self.payload
-            + &format!("## Function `{function_name}`\n")
-            + &format!("{function_comments}\n")
-            + &format!("\n")
-            + &format!("#### Parameters:\n")
-            + &format!("```\n")
-            + &format!("{function_args}\n")
-            + &format!("```\n")
-            + &format!("\n")
-            + &format!("#### Returns:\n")
-            + &format!("```\n")
-            + &format!("{function_return}\n")
-            + &format!("```\n");
+        self.payload.push_str(&format!(
+            "
+## Function `{function_name}`
+
+{function_comments}
+
+#### Parameters:
+```
+{function_args}
+```
+
+#### Returns:
+```
+{function_return}
+```
+-----------------------------
+"
+        ));
     }
 
     pub fn render_syntax_doc(

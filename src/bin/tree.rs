@@ -17,7 +17,7 @@ fn generate_syntax_tree(cairo_filename: &str) {
 
     let (syntax_root, _diagnostics) = get_syntax_root_and_diagnostics_from_file(db, cairo_filename);
 
-    let _printed_tree = print_tree(db, &syntax_root, false, true);
+    let _printed_tree = print_tree(db, &syntax_root, true, true);
 
     println!("{_printed_tree}");
 }
