@@ -14,8 +14,9 @@ use crate::template_engine::TemplateEngine;
 pub fn run_printer(
     db: &dyn SyntaxGroup,
     syntax_root: &SyntaxNode,
-    template_engine: impl TemplateEngine,
+    mut template_engine: impl TemplateEngine,
 ) -> String {
+    template_engine.init(db);
     let mut printer = Printer::new(db, template_engine);
     printer.print_tree("root", syntax_root, "", true, true);
     printer.template_engine.get_result()
@@ -66,9 +67,9 @@ impl<'a, T: TemplateEngine> Printer<'a, T> {
                 if under_top_level {
                     self.template_engine.token(
                         field_description,
-                        &green_node.kind,
                         text.as_str(),
                         syntax_node,
+                        self.db,
                     );
                     self.print_token_node(
                         field_description,
@@ -80,7 +81,7 @@ impl<'a, T: TemplateEngine> Printer<'a, T> {
                 }
             }
             syntax::node::green::GreenNodeDetails::Node { .. } => {
-                self.template_engine.node_start(field_description, &green_node.kind, syntax_node);
+                self.template_engine.node_start(field_description, syntax_node, self.db);
                 self.print_internal_node(
                     field_description,
                     indent,
@@ -90,7 +91,7 @@ impl<'a, T: TemplateEngine> Printer<'a, T> {
                     green_node.kind,
                     under_top_level,
                 );
-                self.template_engine.node_end(field_description, &green_node.kind, syntax_node);
+                self.template_engine.node_end(field_description, syntax_node, self.db);
             }
         }
     }

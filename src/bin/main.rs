@@ -9,8 +9,6 @@ use hanji::{run_printer, MarkdownEngine};
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    println!("{args:?}");
-
     if args.len() < 2 {
         panic!("File path to parse is required.")
     }
