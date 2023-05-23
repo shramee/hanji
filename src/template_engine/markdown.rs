@@ -91,7 +91,7 @@ impl MarkdownEngine {
         let mut function_name = String::new();
         let mut function_comments = String::new();
         let mut function_args = String::new();
-        let mut function_return = String::from("Void");
+        let mut function_return = String::new();
 
         while i < max_index {
             let (kind, _desc, text) = &tokens[i];
@@ -146,6 +146,10 @@ impl MarkdownEngine {
             i += 1;
         }
 
+        if !function_args.is_empty() {
+            function_args = format!("\n\n#### Parameters:\n{function_args}\n");
+        }
+
         while i < max_index {
             let (kind, _desc, text) = &tokens[i];
             if TokenLBrace == *kind {
@@ -156,41 +160,25 @@ impl MarkdownEngine {
                     function_return = "".into();
                 }
                 _ => {
-                    if function_return != "Void" {
-                        function_return.push_str(text);
-                        function_return.push(' ');
-                    }
+                    function_return.push_str(text);
+                    function_return.push(' ');
                 }
             }
             i += 1;
+        }
+
+        if !function_return.is_empty() {
+            function_return = format!("\n\n#### Returns:\n{function_return}\n");
         }
 
         let mut code = "".to_string();
         node.children(db).for_each(|x| code.push_str(&x.get_text(db)));
         code = code.trim_matches('\n').to_string();
 
-        self.payload.push_str(&format!(
-            "## Function `{function_name}`
-
-{function_comments}
-
-#### Parameters:
-```
-{function_args}
-```
-
-#### Returns:
-```
-{function_return}
-```
-
-#### Source code
-```
-{code}
-```
------------------------------
-"
-        ));
+        self.payload.push_str(&format!("\n## Function `{function_name}`\n"));
+        self.payload.push_str(&format!("{function_comments}{function_args}{function_return}"));
+        self.payload.push_str(&format!("\n#### Source code\n```rust\n{code}\n```\n"));
+        self.payload.push_str(&format!("\n-----------------------------\n"));
     }
 
     pub fn render_syntax_doc(
