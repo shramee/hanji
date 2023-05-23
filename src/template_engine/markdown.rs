@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::kind::SyntaxKind::*;
 use cairo_lang_syntax::node::SyntaxNode;
@@ -15,7 +16,10 @@ pub struct MarkdownEngine {
 }
 
 impl TemplateEngine for MarkdownEngine {
-    fn token(&mut self, description: &str, kind: &SyntaxKind, text: &str, _node: &SyntaxNode) {
+    fn init(&mut self, _db: &dyn SyntaxGroup) {}
+
+    fn token(&mut self, description: &str, text: &str, node: &SyntaxNode, db: &dyn SyntaxGroup) {
+        let kind = node.kind(db);
         if self.ignored_nodes.contains_key(&kind) {
             return;
         }
@@ -23,24 +27,27 @@ impl TemplateEngine for MarkdownEngine {
             SyntaxKind::TokenNewline => ".",
             _ => text,
         };
-        self.tokens.push((*kind, description.into(), text.into()));
+
+        self.tokens.push((kind, description.into(), text.into()));
     }
 
-    fn node_start(&mut self, description: &str, kind: &SyntaxKind, _node: &SyntaxNode) {
+    fn node_start(&mut self, description: &str, node: &SyntaxNode, db: &dyn SyntaxGroup) {
+        let kind = node.kind(db);
         if self.ignored_nodes.contains_key(&kind) {
             return;
         }
-        let _node_data = (kind.to_string(), description.to_string());
-        self.nodes.push((*kind, description.to_string(), self.tokens.len()));
+
+        self.nodes.push((kind, description.to_string(), self.tokens.len()));
     }
 
-    fn node_end(&mut self, _description: &str, kind: &SyntaxKind, _node: &SyntaxNode) {
+    fn node_end(&mut self, _description: &str, node: &SyntaxNode, db: &dyn SyntaxGroup) {
+        let kind = node.kind(db);
         if self.ignored_nodes.contains_key(&kind) {
             return;
         }
-        let node = self.nodes.pop().unwrap();
+        let node_tup = self.nodes.pop().unwrap();
         match kind {
-            FunctionWithBody => self.process_function_doc(node),
+            FunctionWithBody => self.process_function_doc(node_tup, node, db),
             _ => {}
         }
     }
@@ -70,10 +77,14 @@ impl MarkdownEngine {
         }
     }
 
-    pub fn process_function_doc(&mut self, node: (SyntaxKind, String, usize)) {
+    pub fn process_function_doc(
+        &mut self,
+        node_tup: (SyntaxKind, String, usize),
+        node: &SyntaxNode,
+        db: &dyn SyntaxGroup,
+    ) {
         // Gets all children nodes
-        let tokens = &self.tokens[node.2..];
-
+        let tokens = &self.tokens[node_tup.2..];
         let max_index = tokens.len();
         let mut i: usize = 0;
 
@@ -90,6 +101,10 @@ impl MarkdownEngine {
             function_comments.push_str(&text.to_string().replace("//", "").trim());
             function_comments.push_str("\n");
             i += 1;
+        }
+
+        if !function_comments.is_empty() {
+            function_comments = format!("\n{function_comments}\n");
         }
 
         while i < max_index {
@@ -150,9 +165,12 @@ impl MarkdownEngine {
             i += 1;
         }
 
+        let mut code = "".to_string();
+        node.children(db).for_each(|x| code.push_str(&x.get_text(db)));
+        code = code.trim_matches('\n').to_string();
+
         self.payload.push_str(&format!(
-            "
-## Function `{function_name}`
+            "## Function `{function_name}`
 
 {function_comments}
 
@@ -164,6 +182,11 @@ impl MarkdownEngine {
 #### Returns:
 ```
 {function_return}
+```
+
+#### Source code
+```
+{code}
 ```
 -----------------------------
 "
