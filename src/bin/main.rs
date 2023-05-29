@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatabase};
 use hanji::utils::get_cairo_files_in_path;
-use hanji::{run_printer, MarkdownEngine};
+use hanji::{print_markdown, run_printer, MarkdownEngine};
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -34,7 +34,7 @@ fn main() {
 
             let mut file = File::create(&doc_file_path.into_os_string().to_str().unwrap()).unwrap();
 
-            let docs = generate_cairo_file_docs(cairo_file.to_str().unwrap());
+            let docs = print_markdown(cairo_file.to_str().unwrap());
             file.write_all(docs.as_bytes()).unwrap();
         }
     } else {
@@ -45,10 +45,6 @@ fn main() {
     // cairo_lang_syntax_codegen::cairo_spec::get_spec
 }
 
-fn generate_cairo_file_docs(cairo_filename: &str) -> String {
-    run_printer(cairo_filename, MarkdownEngine::new())
-}
-
 fn print_cairo_file_docs(cairo_filename: &str) {
-    println!("{}", generate_cairo_file_docs(cairo_filename));
+    println!("{}", print_markdown(cairo_filename));
 }
