@@ -1,11 +1,9 @@
+use hanji::print_markdown;
+use hanji::utils::get_cairo_files_in_path;
 use std::env;
 use std::fs::{create_dir, create_dir_all, remove_dir_all, File};
 use std::io::prelude::*;
 use std::path::PathBuf;
-
-use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatabase};
-use hanji::utils::get_cairo_files_in_path;
-use hanji::{print_markdown, run_printer, MarkdownEngine};
 fn main() {
     let args: Vec<String> = env::args().collect();
 

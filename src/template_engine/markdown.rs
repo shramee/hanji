@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::kind::SyntaxKind::*;
-use cairo_lang_syntax::node::SyntaxNode;
+use crate::SyntaxGroup;
+use crate::SyntaxKind;
+use crate::SyntaxKind::*;
+use crate::SyntaxNode;
 
 use super::TemplateEngine;
 
