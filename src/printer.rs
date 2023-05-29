@@ -1,3 +1,4 @@
+use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatabase};
 // Source cairo/crates/cairo-lang-parser/src/printer.rs
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -8,18 +9,27 @@ use cairo_lang_syntax_codegen::spec::{Member, Node, NodeKind};
 use colored::{ColoredString, Colorize};
 use itertools::zip_eq;
 use smol_str::SmolStr;
+use std::panic;
 
 use crate::template_engine::TemplateEngine;
 
-pub fn run_printer(
-    db: &dyn SyntaxGroup,
-    syntax_root: &SyntaxNode,
-    mut template_engine: impl TemplateEngine,
-) -> String {
-    template_engine.init(db);
-    let mut printer = Printer::new(db, template_engine);
-    printer.print_tree("root", syntax_root, "", true, true);
-    printer.template_engine.get_result()
+pub fn run_printer(cairo_filename: &str, mut template_engine: impl TemplateEngine) -> String {
+    let db_val = SimpleParserDatabase::default();
+    let db = &db_val;
+    let mut print = String::new();
+
+    let result = panic::catch_unwind(|| {
+        let (_, _) = get_syntax_root_and_diagnostics_from_file(db, cairo_filename);
+    });
+    if result.is_ok() {
+        let (syntax_root, _diagnostics) =
+            get_syntax_root_and_diagnostics_from_file(db, cairo_filename);
+        template_engine.init(db);
+        let mut printer = Printer::new(db, template_engine);
+        printer.print_tree("root", &syntax_root, "", true, true);
+        print.push_str(&printer.template_engine.get_result());
+    }
+    print
 }
 
 pub struct Printer<'a, T: TemplateEngine> {
@@ -250,22 +260,46 @@ impl<'a, T: TemplateEngine> Printer<'a, T> {
 
     // Color helpers.
     fn bold(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.bold() } else { text }
+        if self.print_colors {
+            text.bold()
+        } else {
+            text
+        }
     }
     fn green(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.green() } else { text }
+        if self.print_colors {
+            text.green()
+        } else {
+            text
+        }
     }
     fn red(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.red() } else { text }
+        if self.print_colors {
+            text.red()
+        } else {
+            text
+        }
     }
     fn cyan(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.cyan() } else { text }
+        if self.print_colors {
+            text.cyan()
+        } else {
+            text
+        }
     }
     fn blue(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.blue() } else { text }
+        if self.print_colors {
+            text.blue()
+        } else {
+            text
+        }
     }
     fn bright_purple(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.bright_purple() } else { text }
+        if self.print_colors {
+            text.bright_purple()
+        } else {
+            text
+        }
     }
 }
 

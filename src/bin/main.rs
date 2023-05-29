@@ -46,12 +46,7 @@ fn main() {
 }
 
 fn generate_cairo_file_docs(cairo_filename: &str) -> String {
-    let db_val = SimpleParserDatabase::default();
-    let db = &db_val;
-
-    let (syntax_root, _diagnostics) = get_syntax_root_and_diagnostics_from_file(db, cairo_filename);
-
-    run_printer(db, &syntax_root, MarkdownEngine::new())
+    run_printer(cairo_filename, MarkdownEngine::new())
 }
 
 fn print_cairo_file_docs(cairo_filename: &str) {
