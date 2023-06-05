@@ -1,19 +1,27 @@
+use clap::Parser;
 use hanji::print_markdown;
 use hanji::utils::get_cairo_files_in_path;
-use std::env;
-use std::fs::{create_dir, create_dir_all, remove_dir_all, File};
+
+use std::fs::{create_dir_all, remove_dir_all, remove_file, File};
 use std::io::prelude::*;
 use std::path::PathBuf;
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// Path to the cairo file or directory to parse
+    path: String,
+
+    /// The directory to output the docs in
+    out_dir: Option<String>,
+}
+
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let cli = Cli::parse();
 
-    if args.len() < 2 {
-        panic!("File path to parse is required.")
-    }
+    let in_path = PathBuf::from(cli.path);
 
-    let in_path = PathBuf::from(&args[1]);
-
-    let out_path = match args.get(2) {
+    let out_path = match cli.out_dir {
         Some(path) => PathBuf::from(&path),
         None => PathBuf::from("hanji-out"),
     };
