@@ -80,6 +80,8 @@ fn handle_md_file(cairo_file: &PathBuf, out_path: &PathBuf, index: &mut String, 
 
     let engine = run_printer(cairo_file.to_str().unwrap(), MarkdownEngine::new()).unwrap();
 
+    index.push_str(&format!("\n### File `{:?}`\n", rel_path));
+
     for (fn_head, fn_doc) in &engine.fn_index {
         index.push_str(&format!(
             "- [`{}`]({}/{}#{}) {}\n",
