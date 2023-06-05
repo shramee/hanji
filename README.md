@@ -3,7 +3,7 @@
 ```
 Welcome to Hanji, Hanji builds docs for your Cairo code
 
-Usage: main [OPTIONS] <PATH> [OUT_DIR]
+Usage: cargo run [OPTIONS] <PATH> [OUT_DIR]
 
 Arguments:
   <PATH>     Path to the cairo file or directory to parse
