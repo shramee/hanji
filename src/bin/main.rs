@@ -16,7 +16,7 @@ struct Cli {
     /// Path to output the docs in, default hanji-out
     out_dir: Option<PathBuf>,
 
-    /// Should print the index
+    /// Print the index, can be pasted in readme.md
     #[arg(short, long)]
     index: bool,
 
