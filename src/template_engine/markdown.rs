@@ -9,10 +9,11 @@ use super::TemplateEngine;
 
 pub struct MarkdownEngine {
     pub templates: HashMap<String, String>,
-    nodes: Vec<(SyntaxKind, String, usize)>,
-    tokens: Vec<(SyntaxKind, String, String)>,
+    pub nodes: Vec<(SyntaxKind, String, usize)>,
+    pub tokens: Vec<(SyntaxKind, String, String)>,
     pub ignored_nodes: HashMap<SyntaxKind, u8>,
-    payload: String,
+    pub payload: String,
+    pub fn_index: Vec<(String, String)>, // Index of headings
 }
 
 impl TemplateEngine for MarkdownEngine {
@@ -74,6 +75,7 @@ impl MarkdownEngine {
             tokens: Vec::new(),
             ignored_nodes,
             payload: "".into(),
+            fn_index: Vec::new(),
         }
     }
 
@@ -104,7 +106,7 @@ impl MarkdownEngine {
         }
 
         if !function_comments.is_empty() {
-            function_comments = format!("\n{function_comments}\n");
+            function_comments = format!("\n{function_comments}");
         }
 
         while i < max_index {
@@ -130,6 +132,7 @@ impl MarkdownEngine {
 
         while i < max_index {
             let (kind, _desc, text) = &tokens[i];
+            function_args.push_str(&format!("{}", kind));
             if TokenRParen == *kind {
                 i += 1;
                 break;
@@ -147,7 +150,7 @@ impl MarkdownEngine {
         }
 
         if !function_args.is_empty() {
-            function_args = format!("\n\n#### Parameters:\n{function_args}\n");
+            function_args = format!("\n#### Parameters:\n{function_args}\n");
         }
 
         while i < max_index {
@@ -168,17 +171,22 @@ impl MarkdownEngine {
         }
 
         if !function_return.is_empty() {
-            function_return = format!("\n\n#### Returns:\n{function_return}\n");
+            function_return = format!("\n#### Returns:\n{function_return}\n");
         }
 
         let mut code = "".to_string();
         node.children(db).for_each(|x| code.push_str(&x.get_text(db)));
         code = code.trim_matches('\n').to_string();
 
-        self.payload.push_str(&format!("\n## Function `{function_name}`\n"));
+        self.fn_index.push((
+            format!("Function {function_name}"),
+            function_comments.trim().replace(",\n", ", ").replace(".\n", ". ").replace("\n", ". "),
+        ));
+        self.payload.push_str(&format!("### Function `{function_name}`\n"));
         self.payload.push_str(&format!("{function_comments}{function_args}{function_return}"));
         self.payload.push_str(&format!("\n#### Source code\n```rust\n{code}\n```\n"));
-        self.payload.push_str(&format!("\n-----------------------------\n"));
+        self.payload.push_str(&format!("\n&nbsp;\n\n"));
+        // self.payload.push_str(&format!("\n-----------------------------\n\n"));
     }
 
     pub fn render_syntax_doc(

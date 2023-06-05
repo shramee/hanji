@@ -13,22 +13,27 @@ use std::panic;
 
 use crate::template_engine::TemplateEngine;
 
-pub fn run_printer(cairo_filename: &str, mut template_engine: impl TemplateEngine) -> String {
+pub fn run_printer<T: TemplateEngine>(
+    cairo_filename: &str,
+    mut template_engine: T,
+) -> Result<T, ()> {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
-    let mut print = String::new();
 
-    let result = panic::catch_unwind(|| {
-        let (_, _) = get_syntax_root_and_diagnostics_from_file(db, cairo_filename);
-    });
-    if result.is_ok() {
-        let (syntax_root, _diagnostics) =
-            get_syntax_root_and_diagnostics_from_file(db, cairo_filename);
+    let result =
+        panic::catch_unwind(|| get_syntax_root_and_diagnostics_from_file(db, cairo_filename));
+    if let Ok((syntax_root, _diagnostics)) = result {
         template_engine.init(db);
         let mut printer = Printer::new(db, template_engine);
         printer.print_tree("root", &syntax_root, "", true, true);
-        print.push_str(&printer.template_engine.get_result());
+        return Ok(printer.template_engine);
     }
+    Err(())
+}
+pub fn get_print(cairo_filename: &str, template_engine: impl TemplateEngine) -> String {
+    let mut print = String::new();
+    let template_engine = run_printer(cairo_filename, template_engine).unwrap();
+    print.push_str(&template_engine.get_result());
     print
 }
 
