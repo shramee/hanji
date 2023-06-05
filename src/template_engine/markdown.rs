@@ -92,6 +92,7 @@ impl MarkdownEngine {
 
         let mut function_name = String::new();
         let mut function_comments = String::new();
+        let mut function_tags = String::new();
         let mut function_args = String::new();
         let mut function_return = String::new();
 
@@ -132,25 +133,29 @@ impl MarkdownEngine {
 
         while i < max_index {
             let (kind, _desc, text) = &tokens[i];
-            function_args.push_str(&format!("{}", kind));
             if TokenRParen == *kind {
                 i += 1;
                 break;
             }
             match kind {
                 TokenComma => {
-                    function_args.push_str("\n");
+                    function_args.push_str("` |\n| Param `");
+                }
+                TokenIdentifier => {
+                    function_args.push_str(text);
+                }
+                TokenColon => {
+                    function_args.push_str("` | `");
                 }
                 _ => {
                     function_args.push_str(text);
-                    function_args.push_str(" ");
                 }
             }
             i += 1;
         }
 
         if !function_args.is_empty() {
-            function_args = format!("\n#### Parameters:\n{function_args}\n");
+            function_tags.push_str(&format!("| Param `{function_args}` |\n"));
         }
 
         while i < max_index {
@@ -171,7 +176,11 @@ impl MarkdownEngine {
         }
 
         if !function_return.is_empty() {
-            function_return = format!("\n#### Returns:\n{function_return}\n");
+            function_tags.push_str(&format!("| **Returns** | `{function_return}` |\n"));
+        }
+
+        if !function_tags.is_empty() {
+            function_tags = format!("\n| Name | Type |\n|---|---|\n{function_tags}")
         }
 
         let mut code = "".to_string();
@@ -183,8 +192,8 @@ impl MarkdownEngine {
             function_comments.trim().replace(",\n", ", ").replace(".\n", ". ").replace("\n", ". "),
         ));
         self.payload.push_str(&format!("### Function `{function_name}`\n"));
-        self.payload.push_str(&format!("{function_comments}{function_args}{function_return}"));
-        self.payload.push_str(&format!("\n#### Source code\n```rust\n{code}\n```\n"));
+        self.payload.push_str(&format!("{function_comments}{function_tags}"));
+        self.payload.push_str(&format!("\n#### Source code \n```rust\n{code}\n```\n"));
         self.payload.push_str(&format!("\n&nbsp;\n\n"));
         // self.payload.push_str(&format!("\n-----------------------------\n\n"));
     }
