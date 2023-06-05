@@ -8,4 +8,3 @@ pub use cairo_lang_syntax::node::SyntaxNode;
 // Hanji types/functions
 pub use printer::run_printer;
 pub use template_engine::{MarkdownEngine, TemplateEngine};
-pub use utils::print_markdown;

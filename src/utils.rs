@@ -1,7 +1,5 @@
 use std::path::PathBuf;
 
-use crate::{run_printer, MarkdownEngine};
-
 /// Parses dir for Cairo files
 pub fn get_cairo_files_in_path(dir: &PathBuf) -> Vec<PathBuf> {
     let mut cairo_files: Vec<PathBuf> = vec![];
@@ -18,9 +16,4 @@ pub fn get_cairo_files_in_path(dir: &PathBuf) -> Vec<PathBuf> {
         }
     }
     cairo_files
-}
-
-/// Returns markdown for a file
-pub fn print_markdown(cairo_filename: &str) -> String {
-    run_printer(cairo_filename, MarkdownEngine::new())
 }
